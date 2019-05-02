@@ -104,7 +104,7 @@ func NewMP3Analyzer() MediaAnalyser{
 	return mp3
 }
 
-func (a *MP3Analyzer)Analyser(filePath string , lv analyseLv) Report{
+func (a *MP3Analyzer)Analyser(filePath string , lv AnalyzeLV) Report{
 
 	ctx := MP3Context{}
 	var fi os.FileInfo

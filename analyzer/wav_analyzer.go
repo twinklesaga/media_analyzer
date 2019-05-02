@@ -62,7 +62,7 @@ func NewWavAnalyzer()MediaAnalyser  {
 }
 
 
-func (a *WAVAnalyzer)Analyser(filePath string , lv analyseLv) Report {
+func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 	var err error
 	var f *os.File
 

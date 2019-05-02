@@ -20,7 +20,7 @@ type M4AAnalyzer struct {
 	atomMap map[atomType]AtomProcess
 }
 
-func (a *M4AAnalyzer)Analyser(filePath string , lv analyseLv) Report{
+func (a *M4AAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report{
 	f , err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)

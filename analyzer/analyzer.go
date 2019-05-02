@@ -4,10 +4,10 @@ import (
 	"errors"
 )
 
-type analyseLv int
+type AnalyzeLV int
 
 const(
-	Lv1 analyseLv = 0		// 컨테이너만 분석
+	Lv1 AnalyzeLV = 0 // 컨테이너만 분석
 )
 
 
@@ -23,7 +23,7 @@ type Report struct {
 
 
 type MediaAnalyser interface {
-	Analyser( string, analyseLv) Report
+	Analyser( string, AnalyzeLV) Report
 }
 
 func SliceToUint32(s []byte) (uint32 , error ) {

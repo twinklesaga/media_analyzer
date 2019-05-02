@@ -96,7 +96,7 @@ func (f *Frame)Read(reader io.Reader) error {
 }
 
 
-func (a *FLACAnalyzer)Analyser(filePath string , lv analyseLv) Report {
+func (a *FLACAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 	f , err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)
