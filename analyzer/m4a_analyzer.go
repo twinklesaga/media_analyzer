@@ -20,7 +20,14 @@ type M4AAnalyzer struct {
 	atomMap map[atomType]AtomProcess
 }
 
-func (a *M4AAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report{
+func NewM4AAnalyzer() MediaAnalyzer{
+	m4a := new(M4AAnalyzer)
+	m4a.makeAtomMap()
+
+	return m4a
+}
+
+func (a *M4AAnalyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 	f , err := os.Open(filePath)
 	if err != nil {
 		fmt.Println(err)
@@ -50,7 +57,13 @@ func (a *M4AAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report{
 
 			}else if p.Process != nil {
 				buf := make([]byte , aSize - 8)
-				f.Read(buf)
+				n , err = f.Read(buf)
+				if err != nil {
+					fmt.Println(err)
+				}else if n != int(aSize - 8) {
+					//fmt.Println("------------------------------------missmatch read size")
+				}
+
 				p.Process(&ctx , buf)
 			}else {
 				f.Seek(int64(aSize - 8) , 1)
@@ -92,6 +105,7 @@ const(
 )
 
 func (a *M4AAnalyzer)makeAtomMap(){
+	a.atomMap = make(map[atomType]AtomProcess)
 	a.atomMap[ftyp] = AtomProcess{HasChild:false ,  Process:a.checkFTYP}
 	a.atomMap[moov] = AtomProcess{HasChild:true , Process:a.checkDUMP}
 	a.atomMap[mvhd] = AtomProcess{HasChild:false , Process:a.checkDUMP}
@@ -102,7 +116,7 @@ func (a *M4AAnalyzer)makeAtomMap(){
 	a.atomMap[mdia] = AtomProcess{HasChild:true ,  Process:a.checkDUMP}
 	a.atomMap[mdhd] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 	a.atomMap[hdlr] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
-	a.atomMap[minf] = AtomProcess{HasChild:true ,  Process:a.checkDUMP}
+	a.atomMap[minf] = AtomProcess{HasChild:true ,  Process:a.checkMINF}
 	a.atomMap[smhd] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 	a.atomMap[dinf] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 	a.atomMap[stbl] = AtomProcess{HasChild:true ,  Process:a.checkDUMP}
@@ -115,7 +129,7 @@ func (a *M4AAnalyzer)makeAtomMap(){
 	a.atomMap[sbgp] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 	a.atomMap[udta] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 	a.atomMap[free] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
-	a.atomMap[mdat] = AtomProcess{HasChild:false ,  Process:nil}
+	a.atomMap[mdat] = AtomProcess{HasChild:false ,  Process:a.checkDUMP}
 }
 
 func (a *M4AAnalyzer)checkFTYP(ctx *m4aContext, data []byte) error {
@@ -128,7 +142,16 @@ func (a *M4AAnalyzer)checkMVHD(ctx *m4aContext, data []byte ) error {
 	return nil
 }
 
+func (a *M4AAnalyzer)checkMINF(ctx *m4aContext, data []byte ) error {
+
+	return nil
+}
+
 func (a *M4AAnalyzer)checkDUMP(ctx *m4aContext, data []byte) error {
-	fmt.Println(hex.Dump(data))
+	if len(data) > 1024 {
+		fmt.Println(hex.Dump(data[:1024]))
+	}else {
+		fmt.Println(hex.Dump(data))
+	}
 	return nil
 }

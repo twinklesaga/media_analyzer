@@ -57,12 +57,12 @@ func (f AudioFormat)String() string {
 	}
 }
 
-func NewWavAnalyzer()MediaAnalyser  {
+func NewWavAnalyzer()MediaAnalyzer  {
 	return &WAVAnalyzer{}
 }
 
 
-func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
+func (a *WAVAnalyzer)Analyze(filePath string , lv AnalyzeLV) Report {
 	var err error
 	var f *os.File
 
@@ -76,11 +76,13 @@ func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 	chunkHeaderSize := 8
 	chunkHeaderBuf := make([]byte , chunkHeaderSize)
 	var n int
+	var n64 int64
 	var report Report
-
 	var wavInfo WAVInfo
+	var FileSize int64 = 0
 	for err == nil {
 		n, err = f.Read(chunkHeaderBuf)
+		FileSize += int64(n)
 
 		if err == io.EOF {
 			if n == 0 {
@@ -95,61 +97,71 @@ func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 			chunkId, err = SliceToUint32(chunkHeaderBuf)
 			size, err = SliceToInt32BigEndian(chunkHeaderBuf[4:])
 
-			fmt.Println(hex.Dump(chunkHeaderBuf))
 			if chunkId == RIFF {
 				Riff := make([]byte, 4)
 				n, err = f.Read(Riff)
-
-				fmt.Println(size)
-
+				FileSize += int64(n)
 				if n == 4 {
 					var wave uint32
 					wave ,err = SliceToUint32(Riff)
 					if wave == WAVE {
 						report.FileType = "WAVE"
-
 					}else {
 						fmt.Println(hex.Dump(Riff))
 					}
 				}
 			} else if chunkId == FMT {
-				fmt.Println(size, "FMT")
 				fmtChunk := make([]byte, size)
 				n, err = f.Read(fmtChunk)
+				FileSize += int64(n)
 
 				if err == nil && size == n {
-					fmt.Println(hex.Dump(fmtChunk))
-
 					wavInfo = GetWaveInfo(fmtChunk)
-
 					if wavInfo.Format == WAVE_FORMAT_PCM {
 						report.SampleRate = wavInfo.SampleRate
 						report.BitRate = int(wavInfo.BytePerSec)
-					}else{
 
+					}else{
+						fmt.Println(wavInfo)
+						err = NotSupportData
+						break
 					}
 				} else {
-
+					//err = MismatchContainerFormat
+					//break
 				}
 			}else if chunkId == LIST{
-				f.Seek(int64(size), 1)
-			}else if chunkId == FACT{
-				fmt.Println(size, "FACT")
-				factChunk := make([]byte, size)
-				n, err = f.Read(factChunk)
-				if err == nil && size == n {
-					fmt.Println(hex.Dump(factChunk))
+				n64 , err = f.Seek(int64(size), 1)
+				if err != nil {
 
-				} else {
-
+					fmt.Printf("LIST error : %d , %d : %v\n" , size , n64 , err)
+					err = MismatchContainerFormat
+					report.SubErr = err
+					break
 				}
-
+				FileSize += int64(size)
+			}else if chunkId == FACT{
+				n64 , err = f.Seek(int64(size), 1)
+				if err != nil {
+					err = MismatchContainerFormat
+					report.SubErr = err
+					fmt.Printf("FACT error : %d , %d : %v" , size , n64 , err)
+					break
+				}
+				FileSize += int64(size)
 			} else if chunkId == DATA {
 				wavInfo.DataBlockSize = uint32(size)
-				wavInfo.NumSamples = int(size / int(wavInfo.BytePerSample))
-				wavInfo.Duration = time.Duration(float64(wavInfo.NumSamples)/float64(wavInfo.SampleRate)) * time.Second
-				fmt.Println("DataSize :",size)
-				f.Seek(int64(size), 1)
+				if wavInfo.Format == WAVE_FORMAT_PCM {
+					wavInfo.NumSamples = int(size / int(wavInfo.BytePerSample))
+					wavInfo.Duration = time.Duration(float64(wavInfo.NumSamples)*1000/float64(wavInfo.SampleRate)) * time.Millisecond
+				}
+
+
+
+				n64 , err = f.Seek(int64(size), 1)
+				if err == nil {
+					FileSize += int64(size)
+				}
 			} else {
 				fmt.Println("Unknown chunk " , hex.Dump(chunkHeaderBuf))
 				break
@@ -159,10 +171,14 @@ func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 
 		}
 	}
-	fmt.Println(wavInfo)
+	//fmt.Println(wavInfo)
 	if err != nil {
 		report.Err = err
 	}
+	report.FileSize = FileSize
+	report.Channel = int(wavInfo.Channel)
+	report.Duration = wavInfo.Duration
+	report.SampleBit = wavInfo.SampleBit
 
 	return report
 
@@ -171,6 +187,8 @@ func (a *WAVAnalyzer)Analyser(filePath string , lv AnalyzeLV) Report {
 func GetWaveInfo(fmt []byte) WAVInfo{
 	var info WAVInfo
 	info.ParseFMT(fmt)
+
+	info.SampleBit = int(info.ByteAlign / info.Channel * 8)
 	return info
 }
 
@@ -178,6 +196,7 @@ type WAVInfo struct {
 	Format 			AudioFormat
 	Channel 		uint16
 	SampleRate 		int
+	SampleBit		int
 	BytePerSec  	uint32
 	ByteAlign   	uint16
 	BytePerSample 	uint16
@@ -203,16 +222,16 @@ func (w *WAVInfo)ParseFMT(fmt []byte){
 }
 
 
-const PrintFmt string = `Format : %s(%d)
-Channel : %d
-SampleRate : %d
-BytePerSec : %d
-ByteAlign : %d
-BytePerSample :%d
-DataBlockSize : %d
-NumSamples: %d
-Duration : %v
-`
+const PrintFmt string = "Format : %s(%d)\n" +
+						"Channel : %d\n" +
+						"SampleRate : %d\n" +
+						"BytePerSec : %d\n" +
+						"ByteAlign : %d\n" +
+						"BytePerSample :%d\n" +
+						"DataBlockSize : %d\n" +
+						"NumSamples: %d\n" +
+						"Duration : %v\n"
+
 
 func (w WAVInfo)String()string{
 	return fmt.Sprintf(
