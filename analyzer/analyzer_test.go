@@ -31,7 +31,12 @@ func TestWAVAnalyzer(t *testing.T) {
 
 func TestMP3Analyzer(t *testing.T) {
 	files := []string{
-		"/Volumes/Work/mcp/err/416/405328928.mp3",
+		"/Volumes/Work/mcp/427205215/320k.mp3",
+		"/Volumes/Work/mcp/427205206/320k.mp3",
+		"/Users/1100117/Downloads/NewArea - Space Bound/01 SPACE BOUND.mp3",
+		"/Users/1100117/Downloads/427204637_5d3fe218.mp3",
+	}
+	/*	"/Volumes/Work/mcp/err/416/405328928.mp3",
 		"/Volumes/Work/mcp/err/416/418933583.mp3",
 		"/Volumes/Work/mcp/err/416/419739376.mp3",
 		"/Volumes/Work/mcp/err/416/419934920.mp3",
@@ -41,7 +46,7 @@ func TestMP3Analyzer(t *testing.T) {
 		"/Volumes/Work/mcp/31513321.mp3",
 		"/Volumes/Work/mcp/400172377.mp3",
 		"/Volumes/Work/mcp/err/22401046.mp3",
-	}
+	}*/
 
 	for _,f :=range files {
 

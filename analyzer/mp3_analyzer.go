@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"os"
 	"strconv"
@@ -198,9 +199,9 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 							tlen = string(FrameData)
 						}
 						ctx.TLEN , err = strconv.Atoi(tlen)
-					} else if FrameID == 0 {
+					} else {
 						skipSize := uint32(unSyncSize - id3Pos)
-						f.Seek(int64(skipSize) , 1)
+						f.Seek(int64(skipSize), 1)
 						id3Pos += skipSize
 					}
 
@@ -300,6 +301,9 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 		fmt.Println(ctx.fileSize , pos)
 		if eof {
 			var subErr error = nil
+			if ctx.BitRate == 0 {
+				ctx.BitRate = 1
+			}
 			fileDuration := ctx.fileSize * 8 / int64(ctx.BitRate)* 1000
 			var duration int64
 			if ctx.TLEN > 0 {
@@ -319,7 +323,8 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 			}
 			if ctx.hasTag == false {
 				if subErr == nil {
-					subErr = errors.New("cannot find tag")
+					log.Println("cannot find tag")
+				//	subErr = errors.New("cannot find tag")
 				}
 				if ctx.lastAAU != nil {
 					//a.log(hex.Dump(*ctx.lastAAU))
