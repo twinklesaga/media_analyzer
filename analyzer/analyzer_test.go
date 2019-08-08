@@ -31,6 +31,9 @@ func TestWAVAnalyzer(t *testing.T) {
 
 func TestMP3Analyzer(t *testing.T) {
 	files := []string{
+
+		"/Volumes/Work/mcp/427244641/427245163_5d4b876f.mp3",
+		"/Volumes/Work/mcp/427244641/427244641_5d4b6503.mp3",
 		"/Volumes/Work/mcp/427205215/320k.mp3",
 		"/Volumes/Work/mcp/427205206/320k.mp3",
 		"/Users/1100117/Downloads/NewArea - Space Bound/01 SPACE BOUND.mp3",

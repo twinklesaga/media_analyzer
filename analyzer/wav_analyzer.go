@@ -20,6 +20,7 @@ const (
 	FACT uint32 = 0x66616374
 
 	WAVE uint32 = 0x57415645
+	JUNK uint32 = 0x4a554e4b
 )
 
 type AudioFormat uint16
@@ -162,7 +163,17 @@ func (a *WAVAnalyzer)Analyze(filePath string , lv AnalyzeLV) Report {
 				if err == nil {
 					FileSize += int64(size)
 				}
-			} else {
+			} else if chunkId == JUNK {
+				n64 , err = f.Seek(int64(size), 1)
+				if err != nil {
+					err = MismatchContainerFormat
+					report.SubErr = err
+					fmt.Printf("JUNK error : %d , %d : %v" , size , n64 , err)
+					break
+				}
+				FileSize += int64(size)
+			}else {
+
 				fmt.Println("Unknown chunk " , hex.Dump(chunkHeaderBuf))
 				break
 			}

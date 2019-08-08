@@ -226,7 +226,7 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 				checksum := (code & AAUChecksumMask) >> AAUChecksumOffset
 				if checksum == 0 {
 					ctx.crc = true
-					fmt.Println("CRC",checksum)
+				//	fmt.Println("CRC",checksum)
 				}
 
 				if !ctx.IsMP3() {
@@ -259,12 +259,12 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 
 
 				if ctx.crc {
-					crcBuf := make([]byte, 2)
-					n, err := f.Read(crcBuf)
+					//crcBuf := make([]byte, 2)
+				//	n, err := f.Read(crcBuf)
 					if err != nil || n != 2 {
-						fmt.Println("crc read fail")
+					//	fmt.Println("crc read fail")
 					}
-					fmt.Println(crcBuf[0], crcBuf[1])
+					//fmt.Println(crcBuf[0], crcBuf[1])
 				}
 
 				AAUSize := 144 * ctx.BitRate/ctx.Frequency + paddingByte - 4
@@ -342,6 +342,8 @@ func (a *MP3Analyzer)Analyze(filePath string , lv AnalyzeLV) Report{
 				Err:ctx.err,
 				SubErr:subErr,
 			}
+		}else{
+			fmt.Println("is not eof")
 		}
 	}
 
